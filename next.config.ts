@@ -9,11 +9,16 @@ import { redirects } from './redirects'
 
 const NEXT_PUBLIC_SERVER_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : process.env.__NEXT_PRIVATE_ORIGIN || 'http://localhost:3000'
+  : process.env.__NEXT_PRIVATE_ORIGIN ||
+    process.env.NEXT_PUBLIC_SERVER_URL ||
+    'http://localhost:3000'
+
+const isCloudflareWorkerBuild = process.env.CF_WORKER === 'true'
 
 const nextConfig: NextConfig = {
   // Workerd-specific packages — https://opennext.js.org/cloudflare/howtos/workerd
-  serverExternalPackages: ['jose', 'pg-cloudflare', 'sharp'],
+  // `sharp` is omitted for CF Worker builds (native .node binaries); see payload.config.ts + CF_WORKER.
+  serverExternalPackages: ['jose', 'pg-cloudflare', ...(isCloudflareWorkerBuild ? [] : ['sharp'])],
   images: {
     localPatterns: [
       {
@@ -32,11 +37,18 @@ const nextConfig: NextConfig = {
       }),
     ],
   },
-  webpack: (webpackConfig) => {
+  webpack: (webpackConfig, { webpack }) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],
       '.js': ['.ts', '.tsx', '.js', '.jsx'],
       '.mjs': ['.mts', '.mjs'],
+    }
+
+    if (isCloudflareWorkerBuild) {
+      webpackConfig.plugins.push(
+        new webpack.IgnorePlugin({ resourceRegExp: /^sharp$/ }),
+        new webpack.IgnorePlugin({ resourceRegExp: /@img\/sharp-/ }),
+      )
     }
 
     return webpackConfig

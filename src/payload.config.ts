@@ -1,5 +1,4 @@
 import { sqliteD1Adapter } from '@payloadcms/db-d1-sqlite'
-import sharp from 'sharp'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
@@ -31,6 +30,13 @@ const sqliteD1Options =
   d1Connection.mode === 'http'
     ? { http: d1Connection.http, push: resolvePayloadDbPush() }
     : { binding: d1Connection.binding, push: resolvePayloadDbPush() }
+
+// Native `sharp` cannot load on Cloudflare Workers (no native addons). Official Payload D1 template omits it.
+// Set `CF_WORKER=true` during `opennextjs-cloudflare build` (see package.json `deploy:app` / `preview:cf`).
+const sharp =
+  process.env.CF_WORKER === 'true'
+    ? undefined
+    : (await import('sharp')).default
 
 export default buildConfig({
   admin: {

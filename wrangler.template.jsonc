@@ -2,16 +2,23 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
   "name": "website",
-  "compatibility_date": "2025-08-15",
+  // Recent date + process v2 helps workerd `process`; instrumentation.ts stubs unenv getReport for OpenNext bundle
+  "compatibility_date": "2026-01-01",
   "compatibility_flags": [
     // Enable Node.js API — https://developers.cloudflare.com/workers/configuration/compatibility-flags/#nodejs-compatibility-flag
     "nodejs_compat",
+    // Full Node-compatible `process` (vs minimal unenv) — https://developers.cloudflare.com/workers/configuration/compatibility-flags/#enable-process-v2-implementation
+    "enable_nodejs_process_v2",
     // https://developers.cloudflare.com/workers/configuration/compatibility-flags/#global-fetch-strictly-public
     "global_fetch_strictly_public",
   ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",
+  },
+  "vars": {
+    "CF_WORKER": "true",
+    "NEXT_PUBLIC_SERVER_URL": "https://website.jarrodmflesch.workers.dev",
   },
   "d1_databases": [
     {
@@ -21,4 +28,10 @@
       "remote": true,
     },
   ],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+    },
+  },
 }
