@@ -3,9 +3,14 @@ dist / media
 node_modules
 .DS_Store
 .env
+*.tsbuildinfo
 .next
 next-env.d.ts
 .vercel
+.open-next
+.wrangler
+# Generated from wrangler.template.jsonc + CLOUDFLARE_D1_DATABASE_ID (see scripts/sync-wrangler-d1.mjs)
+wrangler.jsonc
 
 # Payload default media upload directory
 public/media/

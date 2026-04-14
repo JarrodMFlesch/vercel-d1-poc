@@ -74,7 +74,10 @@ export const FormBlock: React.FC<
             method: 'POST',
           })
 
-          const res = await req.json()
+          const res = (await req.json()) as {
+            errors?: { message?: string }[]
+            status?: number
+          }
 
           clearTimeout(loadingTimerID)
 
@@ -83,7 +86,7 @@ export const FormBlock: React.FC<
 
             setError({
               message: res.errors?.[0]?.message || 'Internal Server Error',
-              status: res.status,
+              status: res.status != null ? String(res.status) : undefined,
             })
 
             return

@@ -13,10 +13,24 @@ import { Footer } from './Footer/config'
 import { Header } from './Header/config'
 import { plugins } from './plugins'
 import { defaultLexical } from '@/fields/defaultLexical'
+import { resolveD1Connection } from './utilities/d1Connection'
 import { getServerSideURL } from './utilities/getURL'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+const d1Connection = await resolveD1Connection()
+
+/** Dev: push schema. Prod: use `payload migrate` unless PAYLOAD_DB_PUSH overrides. */
+function resolvePayloadDbPush(): boolean {
+  const push = process.env.PAYLOAD_DB_PUSH?.trim().toLowerCase()
+  return push === 'true' || process.env.NODE_ENV !== 'production'
+}
+
+const sqliteD1Options =
+  d1Connection.mode === 'http'
+    ? { http: d1Connection.http, push: resolvePayloadDbPush() }
+    : { binding: d1Connection.binding, push: resolvePayloadDbPush() }
 
 export default buildConfig({
   admin: {
@@ -57,13 +71,7 @@ export default buildConfig({
   },
   // This config helps us configure global or default features that the other editors can inherit
   editor: defaultLexical,
-  db: sqliteD1Adapter({
-    http: {
-      accountId: process.env.CLOUDFLARE_ACCOUNT_ID!,
-      apiToken: process.env.CLOUDFLARE_API_TOKEN!,
-      databaseId: process.env.CLOUDFLARE_D1_DATABASE_ID!,
-    },
-  }),
+  db: sqliteD1Adapter(sqliteD1Options),
   collections: [Pages, Posts, Media, Categories, Users],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer],
